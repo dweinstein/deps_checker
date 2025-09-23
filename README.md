@@ -57,6 +57,19 @@ python -m deps_checker.cli --help
 
 ## Usage
 
+### Getting Application References
+
+The tool requires NowSecure application reference UUIDs (refs) to analyze SBOM data. These are unique identifiers for mobile applications in your NowSecure platform.
+
+**To find your application refs:**
+1. Log in to your NowSecure Platform
+2. Navigate to your applications list
+3. Click on an application to view its details
+4. Copy the application UUID from the URL or application details page
+   - Example: `123e4567-e89b-12d3-a456-426614174000`
+
+**Note:** The tool uses the latest complete assessment for each application reference.
+
 ### Basic Usage
 
 Check a single application:
