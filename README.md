@@ -165,18 +165,7 @@ is_vulnerable = vuln_db.is_vulnerable_exact("chalk", "5.6.1")
 
 ## Default Vulnerable Packages
 
-The tool checks for these vulnerable versions by default:
-
-| Package | Vulnerable Version |
-|---------|-------------------|
-| chalk | 5.6.1 |
-| debug | 4.4.2 |
-| ansi-styles | 6.2.2 |
-| strip-ansi | 7.1.1 |
-| color-convert | 3.1.1 |
-| wrap-ansi | 9.0.1 |
-| ansi-regex | 6.2.1 |
-| supports-color | 10.2.1 |
+The tool checks against vulnerable packages listed in the [`vulnerable.txt`](./deps_checker/data/vulnerable.txt) file by default.
 
 ## Output Examples
 
