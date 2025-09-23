@@ -38,7 +38,8 @@ The tool includes a curated database of compromised package versions from these 
 
 - Query NowSecure GraphQL API for SBOM data
   - Note: Uses latest complete assessment
-- Check dependencies against known vulnerable versions
+- Check dependencies against known vulnerable version
+  - this project provides a [sample database](deps_checker/data/vulnerable.txt)
 - Support for batch processing multiple applications
 - Multiple output formats (text, JSON, CSV)
 - No external dependencies (uses Python standard library only)
