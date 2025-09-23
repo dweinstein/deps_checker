@@ -12,6 +12,18 @@ from NowSecure's GraphQL API to identify vulnerable dependencies.
 - Multiple output formats (text, JSON, CSV)
 - No external dependencies (uses Python standard library only)
 
+## Demo
+
+Here's what the tool looks like in action:
+
+![Demo Screenshot](./demo-screenshot.png)
+
+The tool provides clear, color-coded output showing:
+- 🔴 **Critical vulnerabilities**: Exact version matches with known vulnerable packages
+- ⚠️ **Warnings**: Package name matches that may indicate potential issues
+- **Summary statistics**: Total counts and vulnerability status
+- **Multiple output formats**: Text (shown), JSON, and CSV options
+
 ## Requirements
 
 - Python 3.7+
