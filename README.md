@@ -19,15 +19,28 @@ from NowSecure's GraphQL API to identify vulnerable dependencies.
 
 ## Installation
 
-Clone or download the files:
-- `check_sbom.py` - Main CLI tool
-- `graphql_client.py` - GraphQL client
-- `vuln_db.py` - Vulnerability database
-- `sbom_analyzer.py` - SBOM analysis logic
+### Option 1: Install as Package (Recommended)
 
-Make the script executable:
+Clone the repository and install:
 ```bash
-chmod +x check_sbom.py
+git clone <repository-url>
+cd deps_checker
+pip install -e .
+```
+
+This will install the `check-sbom` command globally.
+
+### Option 2: Run from Source
+
+Clone the repository:
+```bash
+git clone <repository-url>
+cd deps_checker
+```
+
+Run directly with Python:
+```bash
+python -m deps_checker.cli --help
 ```
 
 ## Usage
@@ -36,13 +49,17 @@ chmod +x check_sbom.py
 
 Check a single application:
 ```bash
-python check_sbom.py --ref "uuid-here" --api-key "your-api-key" --vuln-db vulnerable.txt
+# If installed as package
+check-sbom --ref "uuid-here" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
+
+# If running from source
+python -m deps_checker.cli --ref "uuid-here" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 Using environment variable for API key:
 ```bash
 export NS_API_KEY="your-api-key"
-python check_sbom.py --ref "uuid-here" --vuln-db vulnerable.txt
+check-sbom --ref "uuid-here" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 You can also use the sample environment file as a template:
@@ -50,53 +67,53 @@ You can also use the sample environment file as a template:
 cp .env.sample .env
 # Edit .env with your actual API key
 source .env
-python check_sbom.py --ref "uuid-here" --vuln-db vulnerable.txt
+check-sbom --ref "uuid-here" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 ### Multiple Applications
 
 Check multiple applications at once:
 ```bash
-python check_sbom.py --refs "uuid1" "uuid2" "uuid3" --api-key "your-api-key" --vuln-db vulnerable.txt
+check-sbom --refs "uuid1" "uuid2" "uuid3" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 Read references from a file:
 ```bash
-python check_sbom.py --refs-file app_refs.txt --api-key "your-api-key" --vuln-db vulnerable.txt
+check-sbom --refs-file app_refs.txt --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 ### Output Formats
 
 JSON output:
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db vulnerable.txt --format json > results.json
+check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --format json > results.json
 ```
 
 CSV output:
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db vulnerable.txt --format csv > results.csv
+check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --format csv > results.csv
 ```
 
 Verbose text output:
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db vulnerable.txt --verbose
+check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --verbose
 ```
 
 Debug mode (errors propagate for easier debugging):
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db vulnerable.txt --debug
+check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --debug
 ```
 
 ### Vulnerability Database
 
-The `--vuln-db` argument is required and specifies which vulnerability database to use. For the full vulnerability database, use the included `vulnerable.txt` file:
+The `--vuln-db` argument is required and specifies which vulnerability database to use. For the full vulnerability database, use the included data file:
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db vulnerable.txt
+check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 You can also provide custom vulnerabilities via JSON or TSV files:
 ```bash
-python check_sbom.py --ref "uuid" --api-key "key" --vuln-db custom_vulns.json
+check-sbom --ref "uuid" --api-key "key" --vuln-db custom_vulns.json
 ```
 
 **Supported formats:**
@@ -118,6 +135,27 @@ supports-color	10.2.1,1.2.3
   "package-name": ["1.0.0", "1.0.1"],
   "another-package": ["2.3.4"]
 }
+```
+
+## Using as a Python Library
+
+After installation, you can also import and use the components programmatically:
+
+```python
+from deps_checker import SBOMChecker, VulnerabilityDatabase
+
+# Initialize checker
+checker = SBOMChecker(api_key="your-api-key")
+checker.load_vulnerability_database("deps_checker/data/vulnerable.txt")
+
+# Check a single application
+result = checker.check_application("uuid-here")
+print(f"Vulnerabilities found: {result['summary']['has_vulnerabilities']}")
+
+# Work with vulnerability database directly
+vuln_db = VulnerabilityDatabase()
+vuln_db.load_from_file("deps_checker/data/vulnerable.txt")
+is_vulnerable = vuln_db.is_vulnerable_exact("chalk", "5.6.1")
 ```
 
 ## Exit Codes
@@ -186,7 +224,7 @@ Application Ref: 123e4567-e89b-12d3-a456-426614174000
 The tool returns exit code 1 when vulnerabilities are found, making it suitable for CI/CD pipelines:
 
 ```bash
-python check_sbom.py --refs-file apps.txt --api-key "$NS_API_KEY" --vuln-db vulnerable.txt --format json > results.json
+check-sbom --refs-file apps.txt --api-key "$NS_API_KEY" --vuln-db deps_checker/data/vulnerable.txt --format json > results.json
 if [ $? -eq 1 ]; then
     echo "Vulnerabilities found!"
     exit 1

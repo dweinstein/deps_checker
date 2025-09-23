@@ -1,5 +1,5 @@
 from typing import Dict, List, Any, Optional, Tuple
-from vuln_db import VulnerabilityDatabase
+from .vuln_db import VulnerabilityDatabase
 
 
 class SBOMAnalyzer:

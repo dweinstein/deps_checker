@@ -1,0 +1,10 @@
+# NowSecure SBOM Vulnerability Checker Dependencies
+#
+# This project is designed to have no external dependencies beyond Python's standard library.
+# This file is provided for documentation purposes and for potential future dependencies.
+#
+# Development dependencies (not required for runtime):
+# pytest>=6.0.0
+# black>=22.0.0
+# flake8>=4.0.0
+# mypy>=0.950
