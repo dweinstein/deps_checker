@@ -67,7 +67,7 @@ The tool provides clear output showing:
 
 Clone the repository and install:
 ```bash
-git clone <repository-url>
+git clone https://github.com/dweinstein/deps_checker.git
 cd deps_checker
 pip install -e .
 ```
@@ -78,7 +78,7 @@ This will install the `check-sbom` command globally.
 
 Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/dweinstein/deps_checker.git
 cd deps_checker
 ```
 
