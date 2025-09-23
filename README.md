@@ -3,6 +3,37 @@
 A Python tool to fetch and analyze Software Bill of Materials (SBOM) data
 from NowSecure's GraphQL API to identify vulnerable dependencies.
 
+## Why This Tool Exists
+
+In September 2025, the npm ecosystem experienced two major supply chain attacks that compromised hundreds of packages used by millions of developers worldwide:
+
+1. **The First Wave** ([September 8, 2025](https://www.nowsecure.com/blog/2025/09/08/major-npm-supply-chain-attack-potential-impact-on-mobile-applications/)): Attackers compromised popular packages like `chalk`, `debug`, and `ansi-styles` with over 2 billion weekly downloads, injecting malware designed to intercept cryptocurrency transactions and steal credentials.
+
+2. **The Second Wave** ([September 16, 2025](https://www.nowsecure.com/blog/2025/09/16/new-npm-supply-chain-attack-hits-187-packages-heres-why-mobile-apps-are-still-at-risk/)): 187 additional packages were compromised, particularly targeting mobile development ecosystems including NativeScript, Angular mobile components, and React Native adjacent packages.
+
+### Why Mobile Apps Are at Risk
+
+Modern mobile applications frequently use JavaScript dependencies through:
+- **Hybrid frameworks**: React Native, Ionic, Cordova, NativeScript
+- **Backend services**: Node.js APIs and services that mobile apps connect to
+- **Build tools**: Development and CI/CD pipeline dependencies
+
+These compromised packages can:
+- Steal authentication tokens and API keys
+- Intercept network traffic
+- Exfiltrate sensitive user data
+- Modify application behavior
+
+### How This Tool Helps
+
+`deps_checker` helps security teams and developers:
+- **Rapidly identify** compromised npm packages in mobile applications
+- **Scan SBOM data** from NowSecure assessments to detect vulnerable dependencies
+- **Track specific versions** of packages known to be malicious
+- **Enable quick response** to supply chain attacks by checking entire app portfolios
+
+The tool includes a curated database of compromised package versions from these attacks, including packages like `chalk@5.6.1`, `debug@4.4.2`, and hundreds of others identified in the supply chain compromises.
+
 ## Features
 
 - Query NowSecure GraphQL API for SBOM data
@@ -18,7 +49,7 @@ Here's what the tool looks like in action:
 
 ![Demo Screenshot](./demo-screenshot.png)
 
-The tool provides clear, color-coded output showing:
+The tool provides clear output showing:
 - 🔴 **Critical vulnerabilities**: Exact version matches with known vulnerable packages
 - ⚠️ **Warnings**: Package name matches that may indicate potential issues
 - **Summary statistics**: Total counts and vulnerability status
@@ -194,7 +225,7 @@ The tool checks against vulnerable packages listed in the [`vulnerable.txt`](./d
 
 ## Output Examples
 
-### Text Output
+### Text Output (with --verbose flag)
 ```
 Application Ref: 123e4567-e89b-12d3-a456-426614174000
   Package: com.example.app
@@ -211,6 +242,8 @@ Application Ref: 123e4567-e89b-12d3-a456-426614174000
     • ansi-styles v6.2.0
       Known vulnerable versions: 6.2.2
 ```
+
+Note: The "Known vulnerable versions" details are shown when using the `--verbose` flag.
 
 ### JSON Output Structure
 ```json
