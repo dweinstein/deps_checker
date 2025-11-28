@@ -214,7 +214,8 @@ def main():
         if args.fetch_shai_hulud:
             print("Fetching Shai-Hulud vulnerability database from GitHub...", file=sys.stderr)
             checker.load_remote_vulnerability_database()
-            print("Successfully loaded Shai-Hulud database", file=sys.stderr)
+            num_packages = len(checker.vuln_db.get_all_vulnerable_packages())
+            print(f"Successfully loaded {num_packages} vulnerable packages from Shai-Hulud database", file=sys.stderr)
         else:
             checker.load_vulnerability_database(args.vuln_db)
     except Exception as e:
