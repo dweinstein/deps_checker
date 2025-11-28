@@ -11,6 +11,8 @@ In September 2025, the npm ecosystem experienced two major supply chain attacks 
 
 2. **The Second Wave** ([September 16, 2025](https://www.nowsecure.com/blog/2025/09/16/new-npm-supply-chain-attack-hits-187-packages-heres-why-mobile-apps-are-still-at-risk/)): 187 additional packages were compromised, particularly targeting mobile development ecosystems including NativeScript, Angular mobile components, and React Native adjacent packages.
 
+3. **Shai-Hulud 2.0** ([November 2025](https://blog.gitguardian.com/shai-hulud-2/)): A self-replicating npm worm that compromised 790+ packages through sophisticated propagation techniques, making real-time detection critical for mobile app security.
+
 ### Why Mobile Apps Are at Risk
 
 Modern mobile applications frequently use JavaScript dependencies through:
@@ -38,8 +40,11 @@ The tool includes a curated database of compromised package versions from these 
 
 - Query NowSecure GraphQL API for SBOM data
   - Note: Uses latest complete assessment
-- Check dependencies against known vulnerable version
-  - this project provides a [sample database](deps_checker/data/vulnerable.txt)
+- Check dependencies against known vulnerable versions:
+  - Fetch live Shai-Hulud 2.0 database from [gensecaihq/Shai-Hulud-2.0-Detector](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector)
+  - Or use local vulnerability database files
+  - This project provides a [sample database](deps_checker/data/vulnerable.txt)
+- Support for wildcard version matching (all versions vulnerable)
 - Support for batch processing multiple applications
 - Multiple output formats (text, JSON, CSV)
 - No external dependencies (uses Python standard library only)
@@ -104,19 +109,24 @@ The tool requires NowSecure application reference UUIDs (refs) to analyze SBOM d
 
 ### Basic Usage
 
-Check a single application:
+Check a single application with live Shai-Hulud database:
 ```bash
 # If installed as package
-check-sbom --ref "uuid-here" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
+check-sbom --ref "uuid-here" --api-key "your-api-key" --fetch-shai-hulud
 
 # If running from source
-python -m deps_checker.cli --ref "uuid-here" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
+python -m deps_checker.cli --ref "uuid-here" --api-key "your-api-key" --fetch-shai-hulud
+```
+
+Or use a local vulnerability database:
+```bash
+check-sbom --ref "uuid-here" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
 ```
 
 Using environment variable for API key:
 ```bash
 export NS_API_KEY="your-api-key"
-check-sbom --ref "uuid-here" --vuln-db deps_checker/data/vulnerable.txt
+check-sbom --ref "uuid-here" --fetch-shai-hulud
 ```
 
 You can also use the sample environment file as a template:
@@ -131,39 +141,57 @@ check-sbom --ref "uuid-here" --vuln-db deps_checker/data/vulnerable.txt
 
 Check multiple applications at once:
 ```bash
-check-sbom --refs "uuid1" "uuid2" "uuid3" --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
+check-sbom --refs "uuid1" "uuid2" "uuid3" --api-key "your-api-key" --fetch-shai-hulud
 ```
 
 Read references from a file:
 ```bash
-check-sbom --refs-file app_refs.txt --api-key "your-api-key" --vuln-db deps_checker/data/vulnerable.txt
+check-sbom --refs-file app_refs.txt --api-key "your-api-key" --fetch-shai-hulud
+```
+
+Check all applications in your account:
+```bash
+check-sbom --all-app-refs --api-key "your-api-key" --fetch-shai-hulud
 ```
 
 ### Output Formats
 
 JSON output:
 ```bash
-check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --format json > results.json
+check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud --format json > results.json
 ```
 
 CSV output:
 ```bash
-check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --format csv > results.csv
+check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud --format csv > results.csv
 ```
 
 Verbose text output:
 ```bash
-check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --verbose
+check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud --verbose
 ```
 
 Debug mode (errors propagate for easier debugging):
 ```bash
-check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt --debug
+check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud --debug
 ```
 
 ### Vulnerability Database
 
-The `--vuln-db` argument is required and specifies which vulnerability database to use. For the full vulnerability database, use the included data file:
+You must specify a vulnerability source using either `--fetch-shai-hulud` or `--vuln-db` (but not both).
+
+**Option 1: Fetch Shai-Hulud 2.0 database from GitHub (Recommended)**
+
+Automatically fetch the latest compromised packages list:
+```bash
+check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud
+```
+
+This fetches 790+ compromised packages from the [Shai-Hulud-2.0-Detector repository](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector).
+
+**Option 2: Use local vulnerability database**
+
+For the full vulnerability database, use the included data file:
 ```bash
 check-sbom --ref "uuid" --api-key "key" --vuln-db deps_checker/data/vulnerable.txt
 ```
@@ -203,7 +231,12 @@ from deps_checker import SBOMChecker, VulnerabilityDatabase
 
 # Initialize checker
 checker = SBOMChecker(api_key="your-api-key")
-checker.load_vulnerability_database("deps_checker/data/vulnerable.txt")
+
+# Option 1: Load Shai-Hulud database from GitHub
+checker.load_remote_vulnerability_database()
+
+# Option 2: Load from local file
+# checker.load_vulnerability_database("deps_checker/data/vulnerable.txt")
 
 # Check a single application
 result = checker.check_application("uuid-here")
@@ -272,6 +305,14 @@ Note: The "Known vulnerable versions" details are shown when using the `--verbos
 The tool returns exit code 1 when vulnerabilities are found, making it suitable for CI/CD pipelines:
 
 ```bash
+# Using live Shai-Hulud database
+check-sbom --refs-file apps.txt --api-key "$NS_API_KEY" --fetch-shai-hulud --format json > results.json
+if [ $? -eq 1 ]; then
+    echo "Vulnerabilities found!"
+    exit 1
+fi
+
+# Or using local database
 check-sbom --refs-file apps.txt --api-key "$NS_API_KEY" --vuln-db deps_checker/data/vulnerable.txt --format json > results.json
 if [ $? -eq 1 ]; then
     echo "Vulnerabilities found!"
