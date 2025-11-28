@@ -111,12 +111,25 @@ class SBOMChecker:
                     "summary": {"total_critical": 0, "total_warnings": 0, "has_vulnerabilities": False}
                 }
 
-    def check_multiple_applications(self, refs: List[str], debug: bool = False) -> List[Dict[str, Any]]:
+    def check_multiple_applications(self, refs: List[str], debug: bool = False, verbose: bool = False) -> List[Dict[str, Any]]:
         """Check multiple applications for vulnerabilities."""
         results = []
-        for ref in refs:
+        total = len(refs)
+        for idx, ref in enumerate(refs, 1):
+            if verbose:
+                import sys
+                print(f"Checking application {idx}/{total}: {ref}...", file=sys.stderr)
             result = self.check_application(ref, debug)
             results.append(result)
+            if verbose:
+                import sys
+                summary = result.get('summary', {})
+                if 'error' in result:
+                    print(f"  Error: {result['error']}", file=sys.stderr)
+                elif summary.get('has_vulnerabilities'):
+                    print(f"  Found {summary.get('total_critical', 0)} critical, {summary.get('total_warnings', 0)} warnings", file=sys.stderr)
+                else:
+                    print(f"  No vulnerabilities found", file=sys.stderr)
         return results
 
     def read_refs_from_file(self, filepath: str) -> List[str]:

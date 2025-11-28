@@ -224,7 +224,11 @@ def main():
 
     # Check applications
     try:
-        results = checker.check_multiple_applications(refs, debug=args.debug)
+        if args.verbose:
+            print(f"\nStarting vulnerability check for {len(refs)} application(s)...\n", file=sys.stderr)
+        results = checker.check_multiple_applications(refs, debug=args.debug, verbose=args.verbose)
+        if args.verbose:
+            print("", file=sys.stderr)  # Add blank line after checks
     except Exception as e:
         print(f"Error checking applications: {e}", file=sys.stderr)
         sys.exit(1)
