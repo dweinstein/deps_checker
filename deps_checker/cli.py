@@ -105,6 +105,11 @@ def main():
         "--refs-file",
         help="File containing application reference UUIDs (one per line)"
     )
+    input_group.add_argument(
+        "--all-app-refs",
+        action="store_true",
+        help="Check all applications in your NowSecure account"
+    )
 
     parser.add_argument(
         "--format",
@@ -121,8 +126,13 @@ def main():
 
     parser.add_argument(
         "--vuln-db",
-        required=True,
         help="Path to vulnerability database file (JSON or TSV format). Use 'vulnerable.txt' for the full database."
+    )
+
+    parser.add_argument(
+        "--fetch-shai-hulud",
+        action="store_true",
+        help="Fetch Shai-Hulud 2.0 vulnerability database from GitHub (mutually exclusive with --vuln-db)"
     )
 
     parser.add_argument(
@@ -138,6 +148,24 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
+    # Validate vulnerability database options
+    if args.vuln_db and args.fetch_shai_hulud:
+        print("Error: --vuln-db and --fetch-shai-hulud are mutually exclusive. Choose one.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if not args.vuln_db and not args.fetch_shai_hulud:
+        print("Error: Either --vuln-db or --fetch-shai-hulud is required.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Initialize checker early for fetching refs if needed
+    try:
+        checker = SBOMChecker(args.api_key, args.endpoint)
+    except Exception as e:
+        print(f"Error initializing checker: {e}", file=sys.stderr)
+        sys.exit(1)
+
     # Collect references
     refs = []
     if args.ref:
@@ -146,8 +174,33 @@ def main():
         refs = args.refs
     elif args.refs_file:
         try:
-            checker = SBOMChecker(args.api_key, args.endpoint)
             refs = checker.read_refs_from_file(args.refs_file)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+    elif args.all_app_refs:
+        try:
+            print("Fetching all application references from your account...", file=sys.stderr)
+            applications = checker.fetch_all_application_refs()
+            if not applications:
+                print("No applications found in your account", file=sys.stderr)
+                sys.exit(0)
+            print(f"Found {len(applications)} application(s) to check", file=sys.stderr)
+
+            # Display verbose output if requested
+            if args.verbose:
+                print("\nApplications discovered:", file=sys.stderr)
+                for app in applications:
+                    ref = app.get('ref', 'N/A')
+                    package = app.get('packageKey', 'N/A')
+                    platform = app.get('platformType', 'N/A')
+                    print(f"  - Package: {package}", file=sys.stderr)
+                    print(f"    Platform: {platform}", file=sys.stderr)
+                    print(f"    Ref: {ref}", file=sys.stderr)
+                    print(file=sys.stderr)
+
+            # Extract just the refs for processing
+            refs = [app['ref'] for app in applications if app.get('ref')]
         except ValueError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
@@ -156,12 +209,16 @@ def main():
         print("Error: No application references provided", file=sys.stderr)
         sys.exit(1)
 
-    # Initialize checker and load vulnerability database
+    # Load vulnerability database
     try:
-        checker = SBOMChecker(args.api_key, args.endpoint)
-        checker.load_vulnerability_database(args.vuln_db)
+        if args.fetch_shai_hulud:
+            print("Fetching Shai-Hulud vulnerability database from GitHub...", file=sys.stderr)
+            checker.load_remote_vulnerability_database()
+            print("Successfully loaded Shai-Hulud database", file=sys.stderr)
+        else:
+            checker.load_vulnerability_database(args.vuln_db)
     except Exception as e:
-        print(f"Error initializing checker or loading vulnerability database: {e}", file=sys.stderr)
+        print(f"Error loading vulnerability database: {e}", file=sys.stderr)
         sys.exit(1)
 
     # Check applications

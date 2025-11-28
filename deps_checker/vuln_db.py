@@ -9,6 +9,9 @@ class VulnerabilityDatabase:
     def is_vulnerable_exact(self, package_name: str, version: str) -> bool:
         if package_name not in self.vulnerabilities:
             return False
+        # Support wildcard matching: if "*" is in versions, all versions are vulnerable
+        if "*" in self.vulnerabilities[package_name]:
+            return True
         return version in self.vulnerabilities[package_name]
 
     def has_vulnerable_package(self, package_name: str) -> bool:
@@ -41,6 +44,52 @@ class VulnerabilityDatabase:
 
         except Exception as e:
             raise ValueError(f"Failed to load vulnerabilities from {filepath}: {e}")
+
+    def load_from_shai_hulud_json(self, json_data: dict):
+        """Load vulnerabilities from Shai-Hulud JSON format.
+
+        Expected format:
+        {
+            "packages": [
+                {"name": "package-name", "affectedVersions": ["*"]},
+                ...
+            ]
+        }
+
+        Args:
+            json_data: Parsed JSON data from Shai-Hulud database
+
+        Raises:
+            ValueError: If required keys are missing or data is invalid
+        """
+        try:
+            if "packages" not in json_data:
+                raise ValueError("Missing 'packages' key in Shai-Hulud JSON data")
+
+            packages = json_data["packages"]
+            if not isinstance(packages, list):
+                raise ValueError("'packages' must be a list")
+
+            for package in packages:
+                if not isinstance(package, dict):
+                    continue
+
+                package_name = package.get("name")
+                affected_versions = package.get("affectedVersions", [])
+
+                if not package_name:
+                    continue
+
+                if not isinstance(affected_versions, list):
+                    affected_versions = [affected_versions]
+
+                # Add each version to the vulnerability database
+                for version in affected_versions:
+                    if version:  # Skip empty versions
+                        self.add_vulnerability(package_name, version)
+
+        except Exception as e:
+            raise ValueError(f"Failed to load Shai-Hulud vulnerabilities: {e}")
 
     def _load_from_tsv(self, filepath: str):
         """Load vulnerabilities from a TSV file with format: package<tab>version(s)

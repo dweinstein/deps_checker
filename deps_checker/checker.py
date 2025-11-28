@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from .graphql_client import GraphQLClient, GraphQLError
 from .vuln_db import VulnerabilityDatabase
 from .sbom_analyzer import SBOMAnalyzer
+from .shai_hulud_fetcher import ShaiHuludFetcher
 
 
 SBOM_QUERY = """
@@ -29,6 +30,18 @@ query($ref: UUID!) {
 }
 """
 
+APPLICATIONS_QUERY = """
+query {
+  auto {
+    applications {
+      ref
+      packageKey
+      platformType
+    }
+  }
+}
+"""
+
 
 class SBOMChecker:
     """Main class for checking SBOM data against vulnerability database."""
@@ -41,6 +54,12 @@ class SBOMChecker:
     def load_vulnerability_database(self, filepath: str):
         """Load vulnerability database from file."""
         self.vuln_db.load_from_file(filepath)
+
+    def load_remote_vulnerability_database(self):
+        """Load Shai-Hulud vulnerability database from remote GitHub source."""
+        fetcher = ShaiHuludFetcher()
+        json_data = fetcher.fetch()
+        self.vuln_db.load_from_shai_hulud_json(json_data)
 
     def check_application(self, ref: str, debug: bool = False) -> Dict[str, Any]:
         """Check a single application for vulnerabilities."""
@@ -110,3 +129,22 @@ class SBOMChecker:
             raise ValueError(f"References file not found: {filepath}")
         except Exception as e:
             raise ValueError(f"Error reading references file: {e}")
+
+    def fetch_all_application_refs(self) -> List[Dict[str, Any]]:
+        """Fetch all application data from the NowSecure API.
+
+        Returns:
+            List of application dictionaries containing ref, packageKey, and platformType
+        """
+        try:
+            response = self.client.execute_query(APPLICATIONS_QUERY)
+
+            # Extract applications from the response
+            applications = response.get('data', {}).get('auto', {}).get('applications', [])
+
+            return applications
+
+        except GraphQLError as e:
+            raise ValueError(f"Failed to fetch application references: {e}")
+        except Exception as e:
+            raise ValueError(f"Unexpected error fetching application references: {e}")
