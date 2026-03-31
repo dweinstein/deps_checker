@@ -204,3 +204,5 @@ voip-callkit	1.0.2, 1.0.3
 wdio-web-reporter	0.1.3
 yargs-help-output	5.0.3
 yoo-styles	6.0.326
+axios	1.14.1, 0.30.4
+plain-crypto-js	4.2.1

@@ -13,6 +13,8 @@ In September 2025, the npm ecosystem experienced two major supply chain attacks 
 
 3. **Shai-Hulud 2.0** ([November 2025](https://blog.gitguardian.com/shai-hulud-2/)): A self-replicating npm worm that compromised 790+ packages through sophisticated propagation techniques, making real-time detection critical for mobile app security.
 
+4. **Axios Supply Chain Attack** ([March 31, 2026](https://socket.dev/blog/axios-npm-package-compromised)): Attackers hijacked the primary axios maintainer's npm account and published malicious versions `axios@1.14.1` and `axios@0.30.4` containing a cross-platform RAT delivered via a trojanized dependency (`plain-crypto-js`). The malware beaconed to a C2 server within seconds of `npm install`, deploying platform-specific backdoors on macOS, Windows, and Linux. Advisory: [GHSA-fw8c-xr5c-95f9](https://github.com/advisories/GHSA-fw8c-xr5c-95f9). Safe versions: `axios@1.14.0` or earlier, `axios@0.30.3` or earlier.
+
 ### Why Mobile Apps Are at Risk
 
 Modern mobile applications frequently use JavaScript dependencies through:
@@ -42,6 +44,7 @@ The tool includes a curated database of compromised package versions from these 
   - Note: Uses latest complete assessment
 - Check dependencies against known vulnerable versions:
   - Fetch live Shai-Hulud 2.0 database from [gensecaihq/Shai-Hulud-2.0-Detector](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector)
+  - Merge bundled curated entries for newer attacks not yet present upstream, including the March 31, 2026 axios compromise
   - Or use local vulnerability database files
   - This project provides a [sample database](deps_checker/data/vulnerable.txt)
 - Support for wildcard version matching (all versions vulnerable)
@@ -187,7 +190,7 @@ Automatically fetch the latest compromised packages list:
 check-sbom --ref "uuid" --api-key "key" --fetch-shai-hulud
 ```
 
-This fetches 790+ compromised packages from the [Shai-Hulud-2.0-Detector repository](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector).
+This fetches 790+ compromised packages from the [Shai-Hulud-2.0-Detector repository](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector) and merges the bundled curated entries from `deps_checker/data/vulnerable.txt`, so newer cases such as the March 31, 2026 axios attack are still detected even if they are not yet present upstream.
 
 **Option 2: Use local vulnerability database**
 

@@ -1,5 +1,6 @@
 """Main business logic for SBOM vulnerability checking."""
 
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from .graphql_client import GraphQLClient, GraphQLError
@@ -46,6 +47,8 @@ query {
 class SBOMChecker:
     """Main class for checking SBOM data against vulnerability database."""
 
+    BUNDLED_VULNERABILITY_DB = Path(__file__).resolve().parent / "data" / "vulnerable.txt"
+
     def __init__(self, api_key: str, endpoint: str = "https://api.nowsecure.com/graphql"):
         self.client = GraphQLClient(endpoint, api_key)
         self.vuln_db = VulnerabilityDatabase()
@@ -55,11 +58,18 @@ class SBOMChecker:
         """Load vulnerability database from file."""
         self.vuln_db.load_from_file(filepath)
 
-    def load_remote_vulnerability_database(self):
-        """Load Shai-Hulud vulnerability database from remote GitHub source."""
+    def load_bundled_vulnerability_database(self):
+        """Load the bundled curated vulnerability database."""
+        self.vuln_db.load_from_file(str(self.BUNDLED_VULNERABILITY_DB))
+
+    def load_remote_vulnerability_database(self, include_bundled: bool = True):
+        """Load remote vulnerability data and optionally merge bundled entries."""
         fetcher = ShaiHuludFetcher()
         json_data = fetcher.fetch()
         self.vuln_db.load_from_shai_hulud_json(json_data)
+        if include_bundled:
+            # Merge curated local entries that are not yet present upstream.
+            self.load_bundled_vulnerability_database()
 
     def check_application(self, ref: str, debug: bool = False) -> Dict[str, Any]:
         """Check a single application for vulnerabilities."""
